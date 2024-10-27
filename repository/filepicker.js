@@ -1308,7 +1308,7 @@ M.core_filepicker.init = function(Y, options) {
                 if ((this.options.externallink || this.options.env != 'editor') &&
                             (return_types & 1/*FILE_EXTERNAL*/) &&
                             (this.options.return_types & 1/*FILE_EXTERNAL*/) &&
-                            selectnode.one('.fp-linktype-1 input').get('checked')) {
+                            selectnode.one('.fp-linktype-4 input').get('checked')) {
                     params['linkexternal'] = 'yes';
                 } else if ((return_types & 4/*FILE_REFERENCE*/) &&
                         (this.options.return_types & 4/*FILE_REFERENCE*/) &&
