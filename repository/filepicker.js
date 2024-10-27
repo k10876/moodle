@@ -1234,9 +1234,9 @@ M.core_filepicker.init = function(Y, options) {
             selectnode.all('.fp-saveas,.fp-linktype-2,.fp-linktype-1,.fp-linktype-4,fp-linktype-8,.fp-setauthor,.fp-setlicense').each(function (node) {
                 node.all('label').set('for', node.one('input,select').generateID());
             });
+            selectnode.one('.fp-linktype-4 input').setAttrs({value: 4, name: 'linktype'});
             selectnode.one('.fp-linktype-2 input').setAttrs({value: 2, name: 'linktype'});
             selectnode.one('.fp-linktype-1 input').setAttrs({value: 1, name: 'linktype'});
-            selectnode.one('.fp-linktype-4 input').setAttrs({value: 4, name: 'linktype'});
             selectnode.one('.fp-linktype-8 input').setAttrs({value: 8, name: 'linktype'});
             var changelinktype = function(e) {
                 if (e.currentTarget.get('checked')) {
