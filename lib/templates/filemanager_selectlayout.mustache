@@ -30,6 +30,12 @@
     <div class="container">
         <form>
             <fieldset class="mb-3 row flex-column">
+                <div class="form-check fp-linktype-4">
+                    <label class="form-check-label">
+                        <input class="form-check-input" type="radio">
+                        {{#str}}makefilereference, repository{{/str}}
+                    </label>
+                </div>
                 <div class="form-check fp-linktype-2">
                     <label class="form-check-label">
                         <input class="form-check-input" type="radio">
@@ -40,12 +46,6 @@
                     <label class="form-check-label">
                         <input class="form-check-input" type="radio">
                         {{#str}}makefilelink, repository{{/str}}
-                    </label>
-                </div>
-                <div class="form-check fp-linktype-4">
-                    <label class="form-check-label">
-                        <input class="form-check-input" type="radio">
-                        {{#str}}makefilereference, repository{{/str}}
                     </label>
                 </div>
                 <div class="form-check fp-linktype-8">
