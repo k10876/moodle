@@ -1231,7 +1231,7 @@ M.core_filepicker.init = function(Y, options) {
             var getfile = selectnode.one('.fp-select-confirm');
             var filePickerHelper = this;
             // bind labels with corresponding inputs
-            selectnode.all('.fp-saveas,.fp-linktype-2,.fp-linktype-1,.fp-linktype-4,fp-linktype-8,.fp-setauthor,.fp-setlicense').each(function (node) {
+            selectnode.all('.fp-saveas,.fp-linktype-4,.fp-linktype-2,.fp-linktype-1,fp-linktype-8,.fp-setauthor,.fp-setlicense').each(function (node) {
                 node.all('label').set('for', node.one('input,select').generateID());
             });
             selectnode.one('.fp-linktype-4 input').setAttrs({value: 4, name: 'linktype'});
