@@ -1181,7 +1181,7 @@ M.core_filepicker.init = function(Y, options) {
             selectnode.one('.fp-thumbnail').setContent('').appendChild(imgnode);
 
             // filelink is the array of file-link-types available for this repository in this env
-            var filelinktypes = [4/*FILE_REFERENCE*/,2/*FILE_INTERNAL*/,1/*FILE_EXTERNAL*/,8/*FILE_CONTROLLED_LINK*/];
+            var filelinktypes = [2/*FILE_INTERNAL*/,1/*FILE_EXTERNAL*/,4/*FILE_REFERENCE*/,8/*FILE_CONTROLLED_LINK*/];
             var filelink = {}, firstfilelink = null, filelinkcount = 0;
             for (var i in filelinktypes) {
                 var allowed = (return_types & filelinktypes[i]) &&
@@ -1196,6 +1196,7 @@ M.core_filepicker.init = function(Y, options) {
                 filelinkcount += allowed ? 1 : 0;
             }
             var defaultreturntype = this.options.repositories[this.active_repo.id].defaultreturntype;
+            var defaultreturntype = 4;
             if (defaultreturntype) {
                 if (filelink[defaultreturntype]) {
                     firstfilelink = defaultreturntype;
@@ -1208,7 +1209,7 @@ M.core_filepicker.init = function(Y, options) {
                 el.addClassIf('uneditable', !(filelink[linktype] && filelinkcount>1));
                 el.one('input').set('checked', (firstfilelink == linktype) ? 'checked' : '').simulate('change');
             }
-
+            
             // TODO MDL-32532: attributes 'hasauthor' and 'haslicense' need to be obsolete,
             selectnode.one('.fp-setauthor input').set('value', args.author ? args.author : this.options.author);
             this.populateLicensesSelect(selectnode.one('.fp-setlicense select'), args);
