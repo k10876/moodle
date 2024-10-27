@@ -1231,12 +1231,12 @@ M.core_filepicker.init = function(Y, options) {
             var getfile = selectnode.one('.fp-select-confirm');
             var filePickerHelper = this;
             // bind labels with corresponding inputs
-            selectnode.all('.fp-saveas,.fp-linktype-4,.fp-linktype-2,.fp-linktype-1,fp-linktype-8,.fp-setauthor,.fp-setlicense').each(function (node) {
+            selectnode.all('.fp-saveas,.fp-linktype-2,.fp-linktype-1,.fp-linktype-4,fp-linktype-8,.fp-setauthor,.fp-setlicense').each(function (node) {
                 node.all('label').set('for', node.one('input,select').generateID());
             });
-            selectnode.one('.fp-linktype-4 input').setAttrs({value: 4, name: 'linktype'});
             selectnode.one('.fp-linktype-2 input').setAttrs({value: 2, name: 'linktype'});
             selectnode.one('.fp-linktype-1 input').setAttrs({value: 1, name: 'linktype'});
+            selectnode.one('.fp-linktype-4 input').setAttrs({value: 4, name: 'linktype'});
             selectnode.one('.fp-linktype-8 input').setAttrs({value: 8, name: 'linktype'});
             var changelinktype = function(e) {
                 if (e.currentTarget.get('checked')) {
@@ -1308,7 +1308,7 @@ M.core_filepicker.init = function(Y, options) {
                 if ((this.options.externallink || this.options.env != 'editor') &&
                             (return_types & 1/*FILE_EXTERNAL*/) &&
                             (this.options.return_types & 1/*FILE_EXTERNAL*/) &&
-                            selectnode.one('.fp-linktype-4 input').get('checked')) {
+                            selectnode.one('.fp-linktype-1 input').get('checked')) {
                     params['linkexternal'] = 'yes';
                 } else if ((return_types & 4/*FILE_REFERENCE*/) &&
                         (this.options.return_types & 4/*FILE_REFERENCE*/) &&
