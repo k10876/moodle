@@ -68,6 +68,8 @@ class process_generate_text extends abstract_processor {
             $requestobj->messages = [$userobj];
         }
 
+		$requestobj->max_tokens = 1800
+        
         return new Request(
             method: 'POST',
             uri: '',
