@@ -6,7 +6,7 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ./:/var/www/html
+      - ../moodle-test/moodledata:/var/www/moodledata
     environment:
       MOODLE_DATABASE_HOST: db
       MOODLE_DATABASE_NAME: moodle
@@ -27,7 +27,7 @@ services:
       MYSQL_PASSWORD: moodle_password
       MYSQL_ROOT_PASSWORD: root_password
     volumes:
-      - moodle_db:/var/lib/mysql
+      - ../moodle-test/moodledb:/var/lib/mysql
     ports:
       - "3306:3306"
     healthcheck:
@@ -40,6 +40,7 @@ services:
 
 volumes:
   moodle_db:
+  moodledata:
 
 networks:
   moodle_network:
