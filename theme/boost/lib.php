@@ -186,3 +186,13 @@ function theme_boost_get_pre_scss($theme) {
 
     return $scss;
 }
+
+/**
+ * Page init functions.
+ *
+ * @param moodle_page $page The page object.
+ */
+function theme_boost_page_init(moodle_page $page) {
+    global $CFG;
+    $page->requires->js_call_amd('theme_boost/decorative_images', 'init');
+}

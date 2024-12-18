@@ -48,9 +48,7 @@ RUN mkdir -p /var/www/moodledata \
 
 # Set up proper permissions for web root
 RUN chown -R root:www-data /var/www/html \
-    && chmod -R 0755 /var/www/html \
-    && find /var/www/html -type d -exec chmod 0755 {} \; \
-    && find /var/www/html -type f -exec chmod 0644 {} \;
+    && chmod -R 0755 /var/www/html
 
 # Create writable directories for Moodle with proper permissions
 RUN mkdir -p /var/www/html/cache \
