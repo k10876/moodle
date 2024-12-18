@@ -44,7 +44,7 @@ COPY . /var/www/html/
 # Create moodledata directory with proper permissions
 RUN mkdir -p /var/www/moodledata \
     && chown www-data:www-data /var/www/moodledata \
-    && chmod 0770 /var/www/moodledata
+    && chmod 0777 /var/www/moodledata
 
 # Set up proper permissions for web root
 RUN chown -R root:www-data /var/www/html \
