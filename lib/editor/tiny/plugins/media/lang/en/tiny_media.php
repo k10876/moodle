@@ -122,3 +122,7 @@ $string['alignment_top'] = 'Top';
 
 // Deprecated since Moodle 4.5.
 $string['helplinktext'] = 'Media helper';
+
+$string['multiple_images_tip'] = 'You can select multiple images at once. They will all be inserted with the same settings.';
+$string['multiple_images_processing'] = 'Processing {$a} images...';
+$string['multiple_images_success'] = 'Successfully inserted {$a} images';
