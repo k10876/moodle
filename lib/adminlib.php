@@ -139,17 +139,7 @@ function uninstall_plugin($type, $name) {
     $subplugintypes = core_component::get_plugin_types_with_subplugins();
     if (isset($subplugintypes[$type])) {
         $base = core_component::get_plugin_directory($type, $name);
-
-        $subpluginsfile = "{$base}/db/subplugins.json";
-        if (file_exists($subpluginsfile)) {
-            $subplugins = (array) json_decode(file_get_contents($subpluginsfile))->plugintypes;
-        } else if (file_exists("{$base}/db/subplugins.php")) {
-            debugging('Use of subplugins.php has been deprecated. ' .
-                    'Please update your plugin to provide a subplugins.json file instead.',
-                    DEBUG_DEVELOPER);
-            $subplugins = [];
-            include("{$base}/db/subplugins.php");
-        }
+        $subplugins = \core\component::get_subplugins("{$type}_{$name}");
 
         if (!empty($subplugins)) {
             foreach (array_keys($subplugins) as $subplugintype) {
@@ -11810,7 +11800,9 @@ class admin_setting_check extends admin_setting {
         $output = $OUTPUT->notification($loadingicon . $loadingstr, \core\output\notification::NOTIFY_INFO, false);
 
         // Add the action link.
-        $output .= $OUTPUT->render($this->check->get_action_link());
+        if ($actionlink = $this->check->get_action_link()) {
+            $output .= $OUTPUT->render($actionlink);
+        }
 
         // Wrap in a div with a reference. The JS getAndRender will replace this with the response from the webservice.
         $statusdiv = \html_writer::div($output, '', ['data-check-reference' => $domref]);

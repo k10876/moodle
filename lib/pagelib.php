@@ -25,8 +25,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
+use core\exception\moodle_exception;
 use core\navigation\views\primary;
 use core\navigation\views\secondary;
 use core\navigation\output\primary as primaryoutput;
@@ -617,7 +616,7 @@ class moodle_page {
      */
     protected function magic_get_layout_options() {
         if (!is_array($this->_layout_options)) {
-            $this->_layout_options = $this->_theme->pagelayout_options($this->pagelayout);
+            $this->_layout_options = $this->theme->pagelayout_options($this->pagelayout);
         }
         return $this->_layout_options;
     }
@@ -2181,7 +2180,7 @@ class moodle_page {
         global $DB;
         $category = $DB->get_record('course_categories', array('id' => $categoryid));
         if (!$category) {
-            throw new moodle_exception('unknowncategory');
+            throw new moodle_exception('unknowncategory', a: $categoryid);
         }
         $this->_categories[$category->id] = $category;
         $parentcategoryids = explode('/', trim($category->path, '/'));

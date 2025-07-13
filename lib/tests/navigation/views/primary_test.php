@@ -29,7 +29,7 @@ use ReflectionMethod;
  * @copyright   2021 onwards Peter Dias
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class primary_test extends \advanced_testcase {
+final class primary_test extends \advanced_testcase {
     /**
      * Test the initialise in different contexts
      *
@@ -61,7 +61,7 @@ class primary_test extends \advanced_testcase {
      */
     public static function setting_initialise_provider(): array {
         return [
-            'Testing as a guest user' => ['guest', ['home']],
+            'Testing as a guest user' => ['guest', ['home', 'calendar']],
             'Testing as an admin' => ['admin', ['home', 'myhome', 'mycourses', 'siteadminnode']],
             'Testing as a regular user' => ['user', ['home', 'myhome', 'mycourses']]
         ];

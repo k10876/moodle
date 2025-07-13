@@ -2555,6 +2555,9 @@ function check_upgrade_key($upgradekeyhash) {
         if ($upgradekeyhash === null or $upgradekeyhash !== sha1($CFG->config_php_settings['upgradekey'])) {
             if (!$PAGE->headerprinted) {
                 $PAGE->set_title(get_string('upgradekeyreq', 'admin'));
+                $PAGE->requires->js_call_amd('core/togglesensitive', 'init', ['upgradekey']);
+
+                /** @var core_admin_renderer $output */
                 $output = $PAGE->get_renderer('core', 'admin');
                 echo $output->upgradekey_form_page(new moodle_url('/admin/index.php', array('cache' => 0)));
                 die();
@@ -2866,6 +2869,26 @@ function check_async_backup(environment_results $result): ?environment_results {
     if (!during_initial_install() && empty($CFG->enableasyncbackup)) { // Have to use $CFG as config table may not be available.
         $result->setInfo('Asynchronous backups disabled');
         $result->setFeedbackStr('asyncbackupdisabled');
+        return $result;
+    }
+
+    return null;
+}
+
+/**
+ * Checks if the current database vendor is Aurora MySQL.
+ *
+ * If the database vendor is 'auroramysql', this function sets additional information.
+ *
+ * @param environment_results $result The environment results object to update.
+ * @return environment_results|null The updated environment results object if Aurora is detected, or null otherwise.
+ */
+function check_aurora_version(environment_results $result): ?environment_results {
+    global $CFG;
+
+    if ($CFG->dbtype === 'auroramysql') {
+        $result->setInfo('Aurora compatibility');
+        $result->setFeedbackStr('ensureauroraversion');
         return $result;
     }
 

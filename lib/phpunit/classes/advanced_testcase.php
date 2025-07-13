@@ -622,7 +622,7 @@ abstract class advanced_testcase extends base_testcase {
                 }
                 return TEST_EXTERNAL_FILES_HTTPS_URL . $path;
             }
-            return "https://download.moodle.org/unittest/{$path}";
+            return "https://download.moodle.org/unittest{$path}";
         }
 
         if (defined('TEST_EXTERNAL_FILES_HTTP_URL')) {
@@ -631,7 +631,7 @@ abstract class advanced_testcase extends base_testcase {
             }
             return TEST_EXTERNAL_FILES_HTTP_URL . $path;
         }
-        return "http://download.moodle.org/unittest/{$path}";
+        return "http://download.moodle.org/unittest{$path}";
     }
 
     /**
@@ -911,5 +911,19 @@ abstract class advanced_testcase extends base_testcase {
             'mock' => $mock,
             'handlerstack' => $handlerstack,
         ];
+    }
+
+    /**
+     * Get a copy of the mocked string manager.
+     *
+     * @return \core\tests\mocking_string_manager
+     */
+    protected function get_mocked_string_manager(): \core\tests\mocking_string_manager {
+        global $CFG;
+
+        $this->resetAfterTest();
+        $CFG->config_php_settings['customstringmanager'] = \core\tests\mocking_string_manager::class;
+
+        return get_string_manager(true);
     }
 }

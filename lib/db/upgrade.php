@@ -1447,5 +1447,172 @@ function xmldb_main_upgrade($oldversion) {
     // Automatically generated Moodle v4.5.0 release upgrade line.
     // Put any upgrade step following this.
 
+    if ($oldversion < 2024100701.02) {
+        $smsgateways = $DB->get_records('sms_gateways');
+        foreach ($smsgateways as $gateway) {
+            $newconfig = json_decode($gateway->config);
+            // Continue only if either the `returnurl` OR the `saveandreturn` property exists.
+            if (property_exists($newconfig, "returnurl") || property_exists($newconfig, "saveandreturn")) {
+                // Remove unnecessary data in the config.
+                unset($newconfig->returnurl, $newconfig->saveandreturn);
+
+                // Update the record with the new config.
+                $gateway->config = json_encode($newconfig);
+                $DB->update_record('sms_gateways', $gateway);
+            }
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2024100701.02);
+    }
+
+    if ($oldversion < 2024100702.03) {
+        // Due to a code restriction on the upgrade, invoking any core functions is not permitted.
+        // Thus, to acquire the list of provider plugins,
+        // we should extract them from the `config_plugins` database table.
+        $condition = $DB->sql_like('plugin', ':pattern');
+        $params = ['pattern' => 'aiprovider_%', 'name' => 'version'];
+        $sql = "SELECT plugin FROM {config_plugins} WHERE {$condition} AND name = :name";
+        $providers = $DB->get_fieldset_sql($sql, $params);
+        foreach ($providers as $provider) {
+            // Replace the provider's language string with the provider component's name.
+            if (get_string_manager()->string_exists('pluginname', $provider)) {
+                $providername = get_string('pluginname', $provider);
+                $sql = 'UPDATE {ai_action_register}
+                        SET provider = :provider
+                        WHERE LOWER(provider) = :providername';
+                $DB->execute($sql, ['provider' => $provider, 'providername' => strtolower($providername)]);
+            }
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2024100702.03);
+    }
+
+    if ($oldversion < 2024100704.07) {
+        // Add index for querying delegated sections.
+        $table = new xmldb_table('course_sections');
+        $index = new xmldb_index('component_itemid', XMLDB_INDEX_NOTUNIQUE, ['component', 'itemid']);
+
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2024100704.07);
+    }
+
+    if ($oldversion < 2024100704.09) {
+        // A [name => url] map of new OIDC endpoints to be updated/created.
+        $endpointuris = [
+            'discovery_endpoint' => 'https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration',
+            'token_endpoint' => 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+            'userinfo_endpoint' => 'https://graph.microsoft.com/oidc/userinfo',
+            'authorization_endpoint' => 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+            'device_authorization_endpoint' => 'https://login.microsoftonline.com/common/oauth2/v2.0/devicecode',
+            'end_session_endpoint' => 'https://login.microsoftonline.com/common/oauth2/v2.0/logout',
+            'kerberos_endpoint' => 'https://login.microsoftonline.com/common/kerberos',
+        ];
+
+        // A [name] map of endpoints to be deleted.
+        $deletedendpointuris = [
+            'userpicture_endpoint',
+        ];
+
+        // A [internalfield => externalfield] map of new OIDC-based user field mappings to be updated/created.
+        $userfieldmappings = [
+            'idnumber' => 'sub',
+            'firstname' => 'givenname',
+            'lastname' => 'familyname',
+            'email' => 'email',
+            'lang' => 'locale',
+        ];
+
+        $admin = get_admin();
+        $adminid = $admin ? $admin->id : '0';
+
+        $microsoftservices = $DB->get_records('oauth2_issuer', ['servicetype' => 'microsoft']);
+        foreach ($microsoftservices as $microsoftservice) {
+            $time = time();
+
+            // Insert/update the new endpoints.
+            foreach ($endpointuris as $endpointname => $endpointuri) {
+                $endpoint = ['issuerid' => $microsoftservice->id, 'name' => $endpointname];
+                $endpointid = $DB->get_field('oauth2_endpoint', 'id', $endpoint);
+
+                if ($endpointid) {
+                    $endpoint = array_merge($endpoint, [
+                        'id' => $endpointid,
+                        'url' => $endpointuri,
+                        'timemodified' => $time,
+                        'usermodified' => $adminid,
+                    ]);
+                    $DB->update_record('oauth2_endpoint', $endpoint);
+                } else {
+                    $endpoint = array_merge($endpoint, [
+                        'url' => $endpointuri,
+                        'timecreated' => $time,
+                        'timemodified' => $time,
+                        'usermodified' => $adminid,
+                    ]);
+                    $DB->insert_record('oauth2_endpoint', $endpoint);
+                }
+            }
+
+            // Delete the old endpoints.
+            foreach ($deletedendpointuris as $endpointname) {
+                $endpoint = ['issuerid' => $microsoftservice->id, 'name' => $endpointname];
+                $DB->delete_records('oauth2_endpoint', $endpoint);
+            }
+
+            // Insert/update new user field mappings.
+            foreach ($userfieldmappings as $internalfieldname => $externalfieldname) {
+                $fieldmap = ['issuerid' => $microsoftservice->id, 'internalfield' => $internalfieldname];
+                $fieldmapid = $DB->get_field('oauth2_user_field_mapping', 'id', $fieldmap);
+
+                if ($fieldmapid) {
+                    $fieldmap = array_merge($fieldmap, [
+                        'id' => $fieldmapid,
+                        'externalfield' => $externalfieldname,
+                        'timemodified' => $time,
+                        'usermodified' => $adminid,
+                    ]);
+                    $DB->update_record('oauth2_user_field_mapping', $fieldmap);
+                } else {
+                    $fieldmap = array_merge($fieldmap, [
+                        'externalfield' => $externalfieldname,
+                        'timecreated' => $time,
+                        'timemodified' => $time,
+                        'usermodified' => $adminid,
+                    ]);
+                    $DB->insert_record('oauth2_user_field_mapping', $fieldmap);
+                }
+            }
+
+            // Update the baseurl for the issuer.
+            $microsoftservice->baseurl = 'https://login.microsoftonline.com/common/v2.0';
+            $microsoftservice->timemodified = $time;
+            $microsoftservice->usermodified = $adminid;
+            $DB->update_record('oauth2_issuer', $microsoftservice);
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2024100704.09);
+    }
+
+    if ($oldversion < 2024100704.10) {
+
+        // Define field systememail to be added to oauth2_issuer.
+        $table = new xmldb_table('oauth2_issuer');
+        $field = new xmldb_field('systememail', XMLDB_TYPE_CHAR, '100', null, null, null, null, 'loginpagename');
+
+        // Conditionally launch add field systememail.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2024100704.10);
+    }
+
     return true;
 }

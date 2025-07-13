@@ -31,6 +31,7 @@ $string['agelocationverificationdisabled'] = 'Age and location verification disa
 $string['authnotexisting'] = 'The autorization plugin doesn\'t exist';
 $string['backupcontainexternal'] = 'This backup file contains external Moodle Network Hosts that are not configured locally';
 $string['backuptablefail'] = 'Backup tables could NOT be set up successfully!';
+$string['blockcannotadd'] = 'Cannot add block';
 $string['blockcannotconfig'] = 'This block does not support global configuration';
 $string['blockcannotinistantiate'] = 'Problem in instantiating block object';
 $string['blockcannotread'] = 'Could not read data for blockid= {$a}';
@@ -230,7 +231,7 @@ $string['dndmaxbytes'] = 'The file is too large. The maximum size allowed is {$a
 $string['dndread'] = 'Error reading the file';
 $string['dndupload'] = 'An unknown error ocurred while uploading the file';
 $string['dndunkownfile'] = 'This file type is not supported';
-$string['downgradedcore'] = 'ERROR!!!  The code you are using is OLDER than the version that made these databases!';
+$string['downgradedcore'] = 'Error: The code you are using is older than the version recorded in the database.';
 $string['downloadedfilecheckfailed'] = 'Downloaded file check failed';
 $string['duplicatefieldname'] = 'Duplicate field name "{$a}" detected';
 $string['duplicatenosupport'] = '\'{$a->modname}\' activity could not be duplicated because the {$a->modtype} module does not support backup and restore.';
@@ -378,7 +379,7 @@ $string['invalidrole'] = 'Invalid role';
 $string['invalidroleid'] = 'Invalid role ID';
 $string['invalidscaleid'] = 'Incorrect scale ID';
 $string['invalidsection'] = 'Course module record contains invalid section';
-$string['invalidsesskey'] = 'Your session has most likely timed out. Please log in again.';
+$string['invalidsesskey'] = 'Your session has most likely timed out. Please check if you are logged in or go back to the previous screen and reload the page.';
 $string['invalidshortname'] = 'Invalid short course name';
 $string['invalidstatedetected'] = 'Something has gone wrong: {$a}. This should never normally happen.';
 $string['invalidsourcefield'] = 'Draft file\'s source field is invalid';
@@ -552,6 +553,7 @@ $string['sessionipnomatch2'] = '<p>Sorry, but your IP number seems to have chang
 $string['sessioncannotobtainlock'] = '<p>Unable to obtain lock for session id {$a->id} within {$a->acquiretimeout}.</p>
 <p>It is likely that another page ({$a->whohaslock}) is still running in another browser tab, or it did not release the lock due to an error.</p>
 <p>You can wait until the session lock timeout ({$a->lockexpire}) or you can restart your browser session. If this error persists, please notify the server administrator.</p>';
+$string['sessionstarterror'] = 'Couldn\'t start session. Please try again later.';
 $string['shortnametaken'] = 'Short name is already used for another course ({$a})';
 $string['sitepolicynotagreed'] = 'Site policy not agreed: <a href="{$a}">Click here to open the site policy.</a>';
 $string['scheduledbackupsdisabled'] = 'Scheduled backups have been disabled by the server admin';

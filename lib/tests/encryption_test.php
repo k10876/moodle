@@ -26,30 +26,10 @@ use advanced_testcase;
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers  \core\encryption
  */
-class encryption_test extends advanced_testcase {
-
-    /**
-     * Clear junk created by tests.
-     */
-    protected function tearDown(): void {
-        global $CFG;
-        $keyfile = encryption::get_key_file(encryption::METHOD_OPENSSL);
-        if (file_exists($keyfile)) {
-            chmod($keyfile, 0700);
-        }
-        $keyfile = encryption::get_key_file(encryption::METHOD_SODIUM);
-        if (file_exists($keyfile)) {
-            chmod($keyfile, 0700);
-        }
-        remove_dir($CFG->dataroot . '/secret');
-        unset($CFG->nokeygeneration);
-        parent::tearDown();
-    }
+final class encryption_test extends advanced_testcase {
 
     protected function setUp(): void {
         parent::setUp();
-        $this->tearDown();
-
         require_once(__DIR__ . '/fixtures/testable_encryption.php');
     }
 

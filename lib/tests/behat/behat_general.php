@@ -100,6 +100,26 @@ class behat_general extends behat_base {
     }
 
     /**
+     * Checks, that current page PATH matches regular expression
+     *
+     * Example: Then the url should match "/course/index\.php"
+     * Example: Then the url should match "/mod/forum/view\.php\?id=[0-9]+"
+     * Example: And the url should match "^http://moodle\.org"
+     *
+     * @Then /^the url should match (?P<pattern>"(?:[^"]|\\")*")$/
+     * @param string $pattern The pattern that must match to the current url.
+     */
+    public function the_url_should_match($pattern) {
+        $url = $this->getSession()->getCurrentUrl();
+
+        if (preg_match($pattern, $url) === 1) {
+            return;
+        }
+
+        throw new ExpectationException(sprintf('The url "%s" should match with %s', $url, $pattern), $this->getSession());
+    }
+
+    /**
      * Reloads the current page.
      *
      * @Given /^I reload the page$/
@@ -977,13 +997,12 @@ class behat_general extends behat_base {
         [$preselector, $prelocator] = $this->transform_selector($preselectortype, $preelement);
         [$postselector, $postlocator] = $this->transform_selector($postselectortype, $postelement);
 
-        $newlines = [
-            "\r\n",
-            "\r",
-            "\n",
-        ];
-        $prexpath = str_replace($newlines, ' ', $this->find($preselector, $prelocator, false, $containernode)->getXpath());
-        $postxpath = str_replace($newlines, ' ', $this->find($postselector, $postlocator, false, $containernode)->getXpath());
+        $prexpath = $this->prepare_xpath_for_javascript(
+            $this->find($preselector, $prelocator, false, $containernode)->getXpath()
+        );
+        $postxpath = $this->prepare_xpath_for_javascript(
+            $this->find($postselector, $postlocator, false, $containernode)->getXpath()
+        );
 
         if ($this->running_javascript()) {
             // The xpath to do this was running really slowly on certain Chrome versions so we are using
@@ -2649,7 +2668,7 @@ EOF;
      * Good for clicking links on tables where links have repeated text in diiferent rows.
      *
      * Example:
-     * - I click on the "Settings" link in the row containing "HTML Text Editor Placement"
+     * - I click on the "Settings" link in the row containing "Text editor placement"
      *
      * @Given /^I click on the "(?P<linktext>(?:[^"]|\\")*)" link in the table row containing "(?P<rowtext>(?:[^"]|\\")*)"$/
      * @param string $linktext

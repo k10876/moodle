@@ -25,7 +25,7 @@ namespace core;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @coversDefaultClass \advanced_testcase
  */
-class advanced_test extends \advanced_testcase {
+final class advanced_test extends \advanced_testcase {
     public static function setUpBeforeClass(): void {
         global $CFG;
         require_once(__DIR__ . '/fixtures/adhoc_test_task.php');
@@ -291,6 +291,30 @@ class advanced_test extends \advanced_testcase {
     public function test_getDataGenerator(): void {
         $generator = $this->getDataGenerator();
         $this->assertInstanceOf('testing_data_generator', $generator);
+    }
+
+    /**
+     * Some basic tests for the getExternalTestFileUrl() method.
+     */
+    public function test_external_file_url(): void {
+        $url = self::getExternalTestFileUrl('testfile.txt');
+        // There should only be a // after the protocol.
+        $this->assertCount(2, explode('//', $url));
+
+        if (defined('TEST_EXTERNAL_FILES_HTTP_URL')) {
+            $this->assertStringContainsString(TEST_EXTERNAL_FILES_HTTP_URL, $url);
+        } else {
+            $this->assertStringContainsString('http://download.moodle.org/unittest', $url);
+        }
+
+        $url = self::getExternalTestFileUrl('testfile.txt', true);
+        $this->assertCount(2, explode('//', $url));
+
+        if (defined('TEST_EXTERNAL_FILES_HTTPS_URL')) {
+            $this->assertStringContainsString(TEST_EXTERNAL_FILES_HTTPS_URL, $url);
+        } else {
+            $this->assertStringContainsString('https://download.moodle.org/unittest', $url);
+        }
     }
 
     public function test_database_mock1(): void {
@@ -757,6 +781,7 @@ class advanced_test extends \advanced_testcase {
         $this->assertEquals(0, $mockedclock->now()->getTimestamp());
         $this->assertEquals(1, $newclock->now()->getTimestamp());
         $this->assertEquals(2, $mockedclock->now()->getTimestamp());
+        $this->assertEquals('Australia/Perth', $newclock->now()->getTimezone()->getName());
 
         // Specify a specific start time.
         $newclock = $this->mock_clock_with_incrementing(12345);
@@ -768,6 +793,7 @@ class advanced_test extends \advanced_testcase {
         $this->assertEquals(12347, $mockedclock->now()->getTimestamp());
 
         $this->assertEquals($newclock->time, $mockedclock->now()->getTimestamp());
+        $this->assertEquals('Australia/Perth', $newclock->now()->getTimezone()->getName());
     }
 
     /**
@@ -790,6 +816,7 @@ class advanced_test extends \advanced_testcase {
         $initialtime = $mockedclock->now()->getTimestamp();
         $this->assertEquals($initialtime, $newclock->now()->getTimestamp());
         $this->assertEquals($initialtime, $mockedclock->now()->getTimestamp());
+        $this->assertEquals('Australia/Perth', $newclock->now()->getTimezone()->getName());
 
         // Specify a specific start time.
         $newclock = $this->mock_clock_with_frozen(12345);
@@ -800,5 +827,6 @@ class advanced_test extends \advanced_testcase {
         $this->assertEquals($initialtime, $mockedclock->now());
         $this->assertEquals($initialtime, $newclock->now());
         $this->assertEquals($initialtime, $mockedclock->now());
+        $this->assertEquals('Australia/Perth', $newclock->now()->getTimezone()->getName());
     }
 }

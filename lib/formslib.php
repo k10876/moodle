@@ -2746,11 +2746,10 @@ require([
         ' . $valFunc . '
     });
 ';
-                }
-            }
-            // This handles both randomised (MDL-65217) and non-randomised IDs.
-            $errorid = preg_replace('/^id_/', 'id_error_', $elem->_attributes['id']);
-            $validateJS .= '
+
+                    // This handles both randomised (MDL-65217) and non-randomised IDs.
+                    $errorid = preg_replace('/^id_/', 'id_error_', $elem->_attributes['id']);
+                    $validateJS .= '
       ret = validate_' . $this->_formName . '_' . $escapedElementName.'(frm.elements[\''.$elementName.'\'], \''.$escapedElementName.'\') && ret;
       if (!ret && !first_focus) {
         first_focus = true;
@@ -2762,6 +2761,8 @@ require([
       }
 ';
 
+                }
+            }
             // Fix for bug displaying errors for elements in a group
             //unset($element);
             //$element =& $this->getElement($elementName);
@@ -3372,7 +3373,8 @@ class MoodleQuickForm_Renderer extends HTML_QuickForm_Renderer_Tableless{
         $group->updateAttributes($attributes);
         $advanced = isset($this->_advancedElements[$group->getName()]);
 
-        $html = $OUTPUT->mform_element($group, $required, $advanced, $error, false);
+        $isinstickyfooter = $group->getName() && ($this->_stickyfooterelement == $group->getName());
+        $html = $OUTPUT->mform_element($group, $required, $advanced, $error, $isinstickyfooter);
         $fromtemplate = !empty($html);
         if (!$fromtemplate) {
             if (method_exists($group, 'getElementTemplateType')) {
@@ -3407,7 +3409,7 @@ class MoodleQuickForm_Renderer extends HTML_QuickForm_Renderer_Tableless{
         }
         $this->_templates[$group->getName()] = $html;
         // Check if the element should be displayed in the sticky footer.
-        if ($group->getName() && ($this->_stickyfooterelement == $group->getName())) {
+        if ($isinstickyfooter) {
             $stickyfooter = new core\output\sticky_footer($html);
             $html = $OUTPUT->render($stickyfooter);
         }

@@ -28,6 +28,7 @@ import {debounce} from 'core/utils';
 import {isSmall, isLarge} from 'core/pagehelpers';
 import Pending from 'core/pending';
 import {setUserPreference} from 'core_user/repository';
+import * as FocusLock from 'core/local/aria/focuslock';
 // The jQuery module is only used for interacting with Boostrap 4. It can we removed when MDL-71979 is integrated.
 import jQuery from 'jquery';
 
@@ -460,7 +461,9 @@ export default class Drawers {
                 pageWrapper.style.overflow = 'hidden';
                 return backdrop;
             })
-            .catch();
+            .catch(() => {
+                return;
+            });
         }
 
         // Show close button and header content once the drawer is fully opened.
@@ -475,6 +478,11 @@ export default class Drawers {
             if (focusOnCloseButton) {
                 closeButton.focus();
             }
+            // On small devices, the drawer must have a trap focus once the focus is inside
+            // to prevent the user from focussing on covered elements.
+            if (isSmall()) {
+                FocusLock.trapFocus(this.drawerNode);
+            }
             pendingPromise.resolve();
         }, 300);
 
@@ -488,7 +496,7 @@ export default class Drawers {
      * @param {boolean} [args.focusOnOpenButton=true] Whether to alter page focus when opening the drawer
      * @param {boolean} [args.updatePreferences=true] Whether to update the user prewference
      */
-    closeDrawer({focusOnOpenButton = true, updatePreferences = true} = {}) {
+        closeDrawer({focusOnOpenButton = true, updatePreferences = true} = {}) {
 
         const pendingPromise = new Pending('theme_boost/drawers:close');
 
@@ -531,8 +539,13 @@ export default class Drawers {
             }
             return backdrop;
         })
-        .catch();
+        .catch(() => {
+                return;
+        });
 
+        if (isSmall()) {
+            FocusLock.untrapFocus();
+        }
         // Move focus to the open drawer (or toggler) button once the drawer is hidden.
         let openButton = getDrawerOpenButton(this.drawerNode.id);
         if (openButton) {
@@ -778,7 +791,10 @@ const registerListeners = () => {
             drawerMap.forEach(drawerInstance => {
                 disableDrawerTooltips(drawerInstance.drawerNode);
                 if (drawerInstance.isOpen) {
-                    if (drawerInstance.closeOnResize) {
+                    const currentFocus = document.activeElement;
+                    const drawerContent = drawerInstance.drawerNode.querySelector(SELECTORS.DRAWERCONTENT);
+                    const shouldClose = drawerInstance.closeOnResize && (!drawerContent || !drawerContent.contains(currentFocus));
+                    if (shouldClose) {
                         drawerInstance.closeDrawer();
                     } else {
                         anyOpen = true;
@@ -798,6 +814,12 @@ const registerListeners = () => {
     };
 
     document.addEventListener('scroll', () => {
+        const currentFocus = document.activeElement;
+        const drawerContentElements = document.querySelectorAll(SELECTORS.DRAWERCONTENT);
+        // Check if the current focus is within any drawer content.
+        if (Array.from(drawerContentElements).some(drawer => drawer.contains(currentFocus))) {
+            return;
+        }
         const body = document.querySelector('body');
         if (window.scrollY >= window.innerHeight) {
             body.classList.add(CLASSES.SCROLLED);

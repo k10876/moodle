@@ -22,14 +22,15 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+$string['aidrawerlabel'] = 'AI-generated content drawer';
 $string['aisummary'] = 'AI summary';
 $string['courseassist:summarise_text'] = 'Summarise text';
 $string['copy'] = 'Copy';
 $string['generatefailtitle'] = 'Something went wrong';
 $string['generating'] = 'Generating your response';
-$string['nocourseassist'] = 'AI summary is not available for this context';
-$string['pluginname'] = 'Course Assistance Placement';
-$string['privacy:metadata'] = 'The Course Assistance placement plugin does not store any personal data.';
+$string['nocourseassist'] = 'An AI-generated summary is not available for this context.';
+$string['pluginname'] = 'Course assistance placement';
+$string['privacy:metadata'] = 'The Course assistance placement plugin does not store any personal data.';
 $string['regenerate'] = 'Regenerate';
 $string['summarise'] = 'Summarise';
 $string['summarise_tooltips'] = 'Create an AI-generated summary of the page content';

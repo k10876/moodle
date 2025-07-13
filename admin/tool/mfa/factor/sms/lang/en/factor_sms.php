@@ -42,7 +42,7 @@ $string['managefactor'] = 'Manage SMS';
 $string['managefactorbutton'] = 'Manage';
 $string['manageinfo'] = 'You are using \'{$a}\' to authenticate.';
 $string['notification:smsgatewaymigration'] = 'SMS settings have moved';
-$string['notification:smsgatewaymigrationinfo'] = 'A new SMS subsystem is now available for managing and configuring all SMS-related functions. Your existing SMS configurations have been seamlessly migrated. You can find and manage them on the new <a href="{$a}">SMS Gateways page</a>.';
+$string['notification:smsgatewaymigrationinfo'] = 'A new SMS subsystem is now available for managing and configuring all SMS-related functions. Your existing SMS configurations have been migrated to the page <a href="{$a}">SMS gateways</a>.';
 $string['logintitle'] = 'Enter the verification code sent to your mobile';
 $string['phonehelp'] = 'Enter your mobile number (including country code) to receive a verification code.';
 $string['pluginname'] = 'SMS mobile phone';
@@ -55,7 +55,7 @@ $string['settings:gateway_help'] = 'The SMS provider you wish to send messages v
 $string['settings:heading'] = 'Users will receive an SMS with 6-digit code during login, which they must enter to complete the login process.
 
 Users will need to register their mobile phone number first.';
-$string['settings:setupdesc'] = '<br><br>To use SMS as an authentication factor, you first need to <a href="{$a}">set up an SMS gateway</a>.';
+$string['settings:setupdesc'] = 'To use SMS as an authentication factor, you first need to <a href="{$a}">set up an SMS gateway</a>.';
 $string['settings:smsgateway'] = 'SMS gateway';
 $string['settings:smsgateway_help'] = 'Select a gateway from the list, or <a href="{$a}">create a new gateway</a>.';
 $string['setupfactor'] = 'Set up SMS';

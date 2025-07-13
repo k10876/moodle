@@ -16,6 +16,9 @@
 
 namespace mod_assign;
 
+use core\task\task_trait;
+use mod_assign\task\queue_assignment_due_digest_notification_tasks_for_users;
+
 /**
  * Test class for the assignment notification_helper.
  *
@@ -26,6 +29,9 @@ namespace mod_assign;
  * @covers \mod_assign\notification_helper
  */
 final class notification_helper_test extends \advanced_testcase {
+
+    use task_trait;
+
     /**
      * Run all the tasks related to the 'due soon' notifications.
      */
@@ -106,6 +112,8 @@ final class notification_helper_test extends \advanced_testcase {
         $assignment = $assignmentgenerator->create_instance([
             'course' => $course->id,
             'duedate' => $duedate,
+            'submissiondrafts' => 0,
+            'assignsubmission_onlinetext_enabled' => 1,
         ]);
 
         // User1 will have a user override, giving them an extra 1 hour for 'duedate'.
@@ -140,6 +148,8 @@ final class notification_helper_test extends \advanced_testcase {
             'cmid' => $assignment->cmid,
             'status' => 'submitted',
             'timemodified' => $clock->time(),
+            'onlinetext' => 'Some text',
+            'assignsubmission_onlinetext_enabled' => 1,
         ]);
 
         // There should be 3 users with the teacher excluded.
@@ -163,6 +173,14 @@ final class notification_helper_test extends \advanced_testcase {
         $user1 = $generator->create_user();
         $generator->enrol_user($user1->id, $course->id, 'student');
 
+        // Suspended user, should not receive notification.
+        $user2 = $generator->create_user(['suspended' => 1]);
+        $generator->enrol_user($user2->id, $course->id, 'student');
+
+        // Nologin user, should not receive notification.
+        $user3 = $generator->create_user(['auth' => 'nologin']);
+        $generator->enrol_user($user3->id, $course->id, 'student');
+
         /** @var \mod_assign_generator $assignmentgenerator */
         $assignmentgenerator = $generator->get_plugin_generator('mod_assign');
 
@@ -171,6 +189,8 @@ final class notification_helper_test extends \advanced_testcase {
         $assignment = $assignmentgenerator->create_instance([
             'course' => $course->id,
             'duedate' => $duedate,
+            'submissiondrafts' => 0,
+            'assignsubmission_onlinetext_enabled' => 1,
         ]);
         $clock->bump(5);
 
@@ -184,15 +204,14 @@ final class notification_helper_test extends \advanced_testcase {
         $duedate = $assignmentobj->get_instance($user1->id)->duedate;
 
         // Get the notifications that should have been created during the adhoc task.
-        $this->assertCount(1, $sink->get_messages_by_component('mod_assign'));
+        $messages = $sink->get_messages_by_component('mod_assign');
+        $this->assertCount(1, $messages);
 
         // Check the subject matches.
-        $messages = $sink->get_messages_by_component('mod_assign');
         $message = reset($messages);
         $stringparams = [
             'duedate' => userdate($duedate),
             'assignmentname' => $assignment->name,
-            'type' => $helper::TYPE_DUE_SOON,
         ];
         $expectedsubject = get_string('assignmentduesoonsubject', 'mod_assign', $stringparams);
         $this->assertEquals($expectedsubject, $message->subject);
@@ -216,7 +235,37 @@ final class notification_helper_test extends \advanced_testcase {
         $this->run_due_soon_notification_helper_tasks();
 
         // There should be a new notification because the 'duedate' has been updated.
-        $this->assertCount(1, $sink->get_messages_by_component('mod_assign'));
+        $messages = $sink->get_messages_by_component('mod_assign');
+        $this->assertCount(1, $messages);
+        $message = reset($messages);
+        $stringparams = [
+            'duedate' => userdate($updatedata->duedate),
+            'assignmentname' => $assignment->name,
+        ];
+        $expectedsubject = get_string('assignmentduesoonsubject', 'mod_assign', $stringparams);
+        $this->assertEquals($expectedsubject, $message->subject);
+
+        // Clear sink.
+        $sink->clear();
+
+        // Let's update the assignment visibility.
+        $DB->set_field('course_modules', 'visible', 0, ['id' => $assigncm->id]);
+
+        // Update the duedate to force a new notification.
+        $updatedata = new \stdClass();
+        $updatedata->id = $assignment->id;
+        $updatedata->duedate = $duedate + HOURSECS * 3;
+        $DB->update_record('assign', $updatedata);
+
+        // Run the tasks again.
+        $this->run_due_soon_notification_helper_tasks();
+
+        // There should not be a new notification the assignmnet is not visible.
+        $this->assertEmpty($sink->get_messages_by_component('mod_assign'));
+
+        // Update the visibility back to visible before the next assert.
+        $DB->set_field('course_modules', 'visible', 1, ['id' => $assigncm->id]);
+
         // Clear sink.
         $sink->clear();
 
@@ -232,14 +281,18 @@ final class notification_helper_test extends \advanced_testcase {
             'cmid' => $assignment->cmid,
             'status' => 'submitted',
             'timemodified' => $clock->time(),
+            'onlinetext' => 'Some text',
         ]);
         $clock->bump(5);
 
         // Run the tasks again.
         $this->run_due_soon_notification_helper_tasks();
 
-        // No new notification should have been sent.
-        $this->assertEmpty($sink->get_messages_by_component('mod_assign'));
+        // There should only be one notifcation for submission (not for due soon).
+        $messages = $sink->get_messages_by_component('mod_assign');
+        $this->assertCount(1, $messages);
+        $expectedsubject = get_string('submissionreceiptsmall', 'mod_assign', ['assignment' => $assignment->name]);
+        $this->assertEquals($expectedsubject, reset($messages)->subject);
 
         // Clear sink.
         $sink->clear();
@@ -321,6 +374,8 @@ final class notification_helper_test extends \advanced_testcase {
         $assignment = $assignmentgenerator->create_instance([
             'course' => $course->id,
             'duedate' => $duedate,
+            'submissiondrafts' => 0,
+            'assignsubmission_onlinetext_enabled' => 1,
         ]);
 
         // User1 will have a user override, giving them an extra minute for 'duedate'.
@@ -356,6 +411,8 @@ final class notification_helper_test extends \advanced_testcase {
             'cmid' => $assignment->cmid,
             'status' => 'submitted',
             'timemodified' => $clock->time(),
+            'onlinetext' => 'Some text',
+            'assignsubmission_onlinetext_enabled' => 1,
         ]);
 
         // User6 will have a cut-off date override that has already lapsed, excluding them from the results.
@@ -388,6 +445,14 @@ final class notification_helper_test extends \advanced_testcase {
         $course = $generator->create_course();
         $user1 = $generator->create_and_enrol($course, 'student');
 
+        // Suspended user, should not receive notification.
+        $user2 = $generator->create_user(['suspended' => 1]);
+        $generator->enrol_user($user2->id, $course->id, 'student');
+
+        // Nologin user, should not receive notification.
+        $user3 = $generator->create_user(['auth' => 'nologin']);
+        $generator->enrol_user($user3->id, $course->id, 'student');
+
         /** @var \mod_assign_generator $assignmentgenerator */
         $assignmentgenerator = $generator->get_plugin_generator('mod_assign');
 
@@ -398,6 +463,8 @@ final class notification_helper_test extends \advanced_testcase {
             'course' => $course->id,
             'duedate' => $duedate,
             'cutoffdate' => $cutoffdate,
+            'submissiondrafts' => 0,
+            'assignsubmission_onlinetext_enabled' => 1,
         ]);
         $clock->bump(5);
 
@@ -435,7 +502,11 @@ final class notification_helper_test extends \advanced_testcase {
         $this->run_overdue_notification_helper_tasks();
 
         // There should be a new notification because the 'duedate' has been updated.
-        $this->assertCount(1, $sink->get_messages_by_component('mod_assign'));
+        $messages = $sink->get_messages_by_component('mod_assign');
+        $this->assertCount(1, $messages);
+        $message = reset($messages);
+        $expectedsubject = get_string('assignmentoverduesubject', 'mod_assign', ['assignmentname' => $assignment->name]);
+        $this->assertEquals($expectedsubject, $message->subject);
 
         // Let's modify the 'cut-off date'.
         $updatedata = new \stdClass();
@@ -450,7 +521,32 @@ final class notification_helper_test extends \advanced_testcase {
         $this->run_overdue_notification_helper_tasks();
 
         // There should be a new notification because the 'cut-off date' has been updated.
-        $this->assertCount(1, $sink->get_messages_by_component('mod_assign'));
+        $messages = $sink->get_messages_by_component('mod_assign');
+        $message = reset($messages);
+        $expectedsubject = get_string('assignmentoverduesubject', 'mod_assign', ['assignmentname' => $assignment->name]);
+        $this->assertEquals($expectedsubject, $message->subject);
+
+        // Let's update the assignment visibility.
+        $cm = get_coursemodule_from_instance('assign', $assignment->id, $course->id);
+        $DB->set_field('course_modules', 'visible', 0, ['id' => $cm->id]);
+
+        // Update the duedate to force a new notification.
+        $updatedata = new \stdClass();
+        $updatedata->id = $assignment->id;
+        $updatedata->duedate = $duedate + (MINSECS * 3);
+        $DB->update_record('assign', $updatedata);
+
+        // Clear sink.
+        $sink->clear();
+
+        // Run the tasks again.
+        $this->run_overdue_notification_helper_tasks();
+
+        // There should not be a new notification because the assignment is not visible.
+        $this->assertEmpty($sink->get_messages_by_component('mod_assign'));
+
+        // Update the visibility back to visible before the next assert.
+        $DB->set_field('course_modules', 'visible', 1, ['id' => $cm->id]);
 
         // Let's modify the 'duedate' one more time.
         $updatedata = new \stdClass();
@@ -464,6 +560,8 @@ final class notification_helper_test extends \advanced_testcase {
             'cmid' => $assignment->cmid,
             'status' => 'submitted',
             'timemodified' => $clock->time(),
+            'onlinetext' => 'Some text',
+            'assignsubmission_onlinetext_enabled' => 1,
         ]);
 
         // Clear sink.
@@ -524,6 +622,8 @@ final class notification_helper_test extends \advanced_testcase {
         $assignment = $assignmentgenerator->create_instance([
             'course' => $course->id,
             'duedate' => $duedate,
+            'submissiondrafts' => 0,
+            'assignsubmission_onlinetext_enabled' => 1,
         ]);
 
         // User1 will have a user override, giving them an extra 1 day for 'duedate', excluding them from the results.
@@ -551,6 +651,8 @@ final class notification_helper_test extends \advanced_testcase {
             'cmid' => $assignment->cmid,
             'status' => 'submitted',
             'timemodified' => $clock->time(),
+            'onlinetext' => 'Some text',
+            'assignsubmission_onlinetext_enabled' => 1,
         ]);
 
         // There should be 1 user with the teacher excluded.
@@ -573,6 +675,14 @@ final class notification_helper_test extends \advanced_testcase {
         $user1 = $generator->create_user();
         $generator->enrol_user($user1->id, $course->id, 'student');
 
+        // Suspended user, should not receive notification.
+        $user2 = $generator->create_user(['suspended' => 1]);
+        $generator->enrol_user($user2->id, $course->id, 'student');
+
+        // Nologin user, should not receive notification.
+        $user3 = $generator->create_user(['auth' => 'nologin']);
+        $generator->enrol_user($user3->id, $course->id, 'student');
+
         /** @var \mod_assign_generator $assignmentgenerator */
         $assignmentgenerator = $generator->get_plugin_generator('mod_assign');
 
@@ -581,16 +691,31 @@ final class notification_helper_test extends \advanced_testcase {
         $assignment1 = $assignmentgenerator->create_instance([
             'course' => $course->id,
             'duedate' => $duedate1,
+            'submissiondrafts' => 0,
+            'assignsubmission_onlinetext_enabled' => 1,
         ]);
         $duedate2 = $clock->time() + WEEKSECS;
         $assignment2 = $assignmentgenerator->create_instance([
             'course' => $course->id,
             'duedate' => $duedate2,
+            'submissiondrafts' => 0,
+            'assignsubmission_onlinetext_enabled' => 1,
         ]);
         $duedate3 = $clock->time() + WEEKSECS + DAYSECS;
         $assignment3 = $assignmentgenerator->create_instance([
             'course' => $course->id,
             'duedate' => $duedate3,
+            'submissiondrafts' => 0,
+            'assignsubmission_onlinetext_enabled' => 1,
+        ]);
+        // Create an assignment with a visibility restriction.
+        $duedate4 = $clock->time() + WEEKSECS;
+        $assignment4 = $assignmentgenerator->create_instance([
+            'course' => $course->id,
+            'duedate' => $duedate4,
+            'visible' => 0,
+            'submissiondrafts' => 0,
+            'assignsubmission_onlinetext_enabled' => 1,
         ]);
         $clock->bump(5);
 
@@ -598,18 +723,23 @@ final class notification_helper_test extends \advanced_testcase {
         $this->run_due_digest_notification_helper_tasks();
 
         // Get the notifications that should have been created during the adhoc task.
-        $this->assertCount(1, $sink->get_messages_by_component('mod_assign'));
+        $messages = $sink->get_messages_by_component('mod_assign');
+        $this->assertCount(1, $messages);
 
         // Check the message for the expected assignments.
-        $messages = $sink->get_messages_by_component('mod_assign');
         $message = reset($messages);
         $this->assertStringContainsString($assignment1->name, $message->fullmessagehtml);
         $this->assertStringContainsString($assignment2->name, $message->fullmessagehtml);
         $this->assertStringNotContainsString($assignment3->name, $message->fullmessagehtml);
+        $this->assertStringNotContainsString($assignment4->name, $message->fullmessagehtml);
 
         // Check the message contains the formatted due date.
         $formatteddate = userdate($duedate1, get_string('strftimedaydate', 'langconfig'));
         $this->assertStringContainsString($formatteddate, $message->fullmessagehtml);
+
+        // Check the subject matches.
+        $expectedsubject = get_string('assignmentduedigestsubject', 'mod_assign', $message->subject);
+        $this->assertEquals($expectedsubject, $message->subject);
 
         // Clear sink.
         $sink->clear();
@@ -629,6 +759,7 @@ final class notification_helper_test extends \advanced_testcase {
         $this->assertStringNotContainsString($assignment1->name, $message->fullmessagehtml);
         $this->assertStringContainsString($assignment2->name, $message->fullmessagehtml);
         $this->assertStringNotContainsString($assignment3->name, $message->fullmessagehtml);
+        $this->assertStringNotContainsString($assignment4->name, $message->fullmessagehtml);
 
         // Clear sink.
         $sink->clear();
@@ -639,6 +770,8 @@ final class notification_helper_test extends \advanced_testcase {
             'cmid' => $assignment2->cmid,
             'status' => 'submitted',
             'timemodified' => $clock->time(),
+            'onlinetext' => 'Some text',
+            'assignsubmission_onlinetext_enabled' => 1,
         ]);
         $clock->bump(5);
 
@@ -646,9 +779,123 @@ final class notification_helper_test extends \advanced_testcase {
         $this->run_due_digest_notification_helper_tasks();
 
         // There are no assignments left to report, so no notification should have been sent.
-        $this->assertEmpty($sink->get_messages_by_component('mod_assign'));
+        // There should only be one notifcation for submission.
+        $messages = $sink->get_messages_by_component('mod_assign');
+        $this->assertCount(1, $messages);
+        $expectedsubject = get_string('submissionreceiptsmall', 'mod_assign', ['assignment' => $assignment2->name]);
+        $this->assertEquals($expectedsubject, reset($messages)->subject);
 
         // Clear sink.
         $sink->clear();
+    }
+
+    /**
+     * Test sending the assignment due digest notification to users in groups with restricted access.
+     */
+    public function test_send_due_digest_notification_to_users_in_groups(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $clock = $this->mock_clock_with_incrementing();
+        $sink = $this->redirectMessages();
+        /** @var \mod_assign_generator $assignmentgenerator */
+        $assignmentgenerator = $generator->get_plugin_generator('mod_assign');
+
+        // Create a course, users and enrol users.
+        $course = $generator->create_course();
+        $user1 = $generator->create_user();
+        $user2 = $generator->create_user();
+        $user3 = $generator->create_user();
+        $generator->enrol_user($user1->id, $course->id, 'student');
+        $generator->enrol_user($user2->id, $course->id, 'student');
+        $generator->enrol_user($user3->id, $course->id, 'student');
+
+        // Create groups and add users to groups.
+        $group1 = $generator->create_group(['courseid' => $course->id]);
+        $group2 = $generator->create_group(['courseid' => $course->id]);
+        $generator->create_group_member(['groupid' => $group1->id, 'userid' => $user1->id]);
+        $generator->create_group_member(['groupid' => $group2->id, 'userid' => $user2->id]);
+
+        // Create assignments.
+        $assignment1 = $assignmentgenerator->create_instance([
+            'course' => $course->id,
+            'duedate' => $clock->time() + WEEKSECS,
+            'submissiondrafts' => 0,
+            'assignsubmission_onlinetext_enabled' => 1,
+        ]);
+        $assignment2 = $assignmentgenerator->create_instance([
+            'course' => $course->id,
+            'duedate' => $clock->time() + WEEKSECS,
+            'submissiondrafts' => 0,
+            'assignsubmission_onlinetext_enabled' => 1,
+        ]);
+        $assignment3 = $assignmentgenerator->create_instance([
+            'course' => $course->id,
+            'duedate' => $clock->time() + WEEKSECS,
+            'submissiondrafts' => 0,
+            'assignsubmission_onlinetext_enabled' => 1,
+        ]);
+
+        // Set restricted access for assignment1 and assignment2 to groups.
+        $availability = [
+            'op' => '&',
+            'showc' => [true],
+            'c' => [
+                [
+                    'type' => 'group',
+                    'id' => (int) $group1->id,
+                ],
+            ],
+        ];
+        $cm = get_coursemodule_from_instance('assign', $assignment1->id, $course->id);
+        $DB->set_field('course_modules', 'availability', json_encode($availability), ['id' => $cm->id]);
+
+        $availability = [
+            'op' => '&',
+            'showc' => [true],
+            'c' => [
+                [
+                    'type' => 'group',
+                    'id' => (int) $group2->id,
+                ],
+            ],
+        ];
+        $cm = get_coursemodule_from_instance('assign', $assignment2->id, $course->id);
+        $DB->set_field('course_modules', 'availability', json_encode($availability), ['id' => $cm->id]);
+
+        // Rebuild course cache to apply changes.
+        rebuild_course_cache($course->id, true);
+
+        // Run the tasks. We want to run all the adhoc tasks at the same time. So we will use the normal task runner.
+        $this->execute_task('\mod_assign\task\queue_all_assignment_due_digest_notification_tasks');
+        // Execute the remaining ad-hoc backup task.
+        $this->start_output_buffering();
+        $this->runAdhocTasks('\mod_assign\task\send_assignment_due_digest_notification_to_user');
+        $this->stop_output_buffering();
+        $messages = $sink->get_messages_by_component('mod_assign');
+
+        // Process the messages.
+        $processedmessages = [];
+        foreach ($messages as $message) {
+            $processedmessages[$message->useridto] = $message;
+        }
+
+        // Verify the messages.
+        $this->assertCount(3, $processedmessages);
+        // User1 should receive a message for assignment1 and assignment3.
+        $this->assertArrayHasKey($user1->id, $processedmessages);
+        $this->assertStringContainsString($assignment1->name, $processedmessages[$user1->id]->fullmessagehtml);
+        $this->assertStringContainsString($assignment3->name, $processedmessages[$user1->id]->fullmessagehtml);
+        $this->assertStringNotContainsString($assignment2->name, $processedmessages[$user1->id]->fullmessagehtml);
+        // User2 should receive a message for assignment2 and assignment3.
+        $this->assertArrayHasKey($user2->id, $processedmessages);
+        $this->assertStringContainsString($assignment2->name, $processedmessages[$user2->id]->fullmessagehtml);
+        $this->assertStringContainsString($assignment3->name, $processedmessages[$user2->id]->fullmessagehtml);
+        $this->assertStringNotContainsString($assignment1->name, $processedmessages[$user2->id]->fullmessagehtml);
+        // User3 should receive a message for assignment3 only.
+        $this->assertArrayHasKey($user3->id, $processedmessages);
+        $this->assertStringContainsString($assignment3->name, $processedmessages[$user3->id]->fullmessagehtml);
+        $this->assertStringNotContainsString($assignment1->name, $processedmessages[$user3->id]->fullmessagehtml);
+        $this->assertStringNotContainsString($assignment2->name, $processedmessages[$user3->id]->fullmessagehtml);
     }
 }

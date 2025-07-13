@@ -58,7 +58,7 @@ const enablePopovers = () => {
     $('body').popover({
         container: 'body',
         selector: '[data-toggle="popover"]',
-        trigger: 'focus click',
+        trigger: 'focus',
         whitelist: Object.assign(DefaultWhitelist, {
             table: [],
             thead: [],
@@ -77,6 +77,9 @@ const enablePopovers = () => {
             $(e.target).popover('show');
         }
     });
+    document.addEventListener('click', e => {
+        $(e.target).closest('[data-toggle="popover"]').popover('show');
+    });
 };
 
 /**
@@ -87,6 +90,12 @@ const enableTooltips = () => {
     $('body').tooltip({
         container: 'body',
         selector: '[data-toggle="tooltip"]',
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            // Hide tooltips on escape key press.
+            $('.tooltip').tooltip('hide');
+        }
     });
 };
 

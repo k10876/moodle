@@ -58,7 +58,8 @@ echo $output->header();
 
 // Prepare summary information about this question attempt.
 $summary = new attempt_summary_information();
-
+// Set the caption.
+$summary->set_caption(get_string('summaryofattempt', 'quiz'));
 // Student name.
 $userpicture = new user_picture($student);
 $userpicture->courseid = $attemptobj->get_courseid();
@@ -71,6 +72,9 @@ $summary->add_item('quizname', get_string('modulename', 'quiz'), format_string($
 
 // Question name.
 $summary->add_item('questionname', get_string('question', 'quiz'), $attemptobj->get_question_name($slot));
+
+// Error message in case of input invalid mark.
+$submiterror = false;
 
 // Process any data that was submitted.
 if (data_submitted() && confirm_sesskey()) {
@@ -96,12 +100,18 @@ if (data_submitted() && confirm_sesskey()) {
         echo $output->notification(get_string('changessaved'), 'notifysuccess');
         close_window(2, true);
         die;
+    } else {
+        $submiterror = true;
     }
 }
 
 // Print quiz information.
 echo html_writer::div($output->render($summary), 'mb-3');
 
+// Display notification if current mark is invalid.
+if ($submiterror) {
+    echo $output->notification(get_string('savemanualgradingfailed', 'quiz'), \core\output\notification::NOTIFY_ERROR);
+}
 // Print the comment form.
 echo '<form method="post" class="mform" id="manualgradingform" action="' .
         $CFG->wwwroot . '/mod/quiz/comment.php">';

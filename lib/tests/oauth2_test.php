@@ -31,7 +31,7 @@ use \core\oauth2\user_field_mapping;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later.
  * @covers \core\oauth2\api
  */
-class oauth2_test extends \advanced_testcase {
+final class oauth2_test extends \advanced_testcase {
 
     /**
      * Tests the crud operations on oauth2 issuers.
@@ -337,6 +337,7 @@ class oauth2_test extends \advanced_testcase {
             ],
             'Microsoft' => [
                 'type' => 'microsoft',
+                'discoveryurl' => '.well-known/openid-configuration',
             ],
             'Facebook' => [
                 'type' => 'facebook',
@@ -415,6 +416,12 @@ class oauth2_test extends \advanced_testcase {
 
         // Set showonloginpage to service only.
         $googleissuer->set('showonloginpage', issuer::SERVICEONLY);
+        $googleissuer->update();
+
+        $this->assertFalse($googleissuer->is_available_for_login());
+
+        // Set showonloginpage to SMTP with XOAUTH2 only.
+        $googleissuer->set('showonloginpage', issuer::SMTPWITHXOAUTH2);
         $googleissuer->update();
 
         $this->assertFalse($googleissuer->is_available_for_login());
